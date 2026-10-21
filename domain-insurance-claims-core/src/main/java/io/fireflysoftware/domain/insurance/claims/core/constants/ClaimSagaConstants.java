@@ -44,6 +44,14 @@ public final class ClaimSagaConstants {
     public static final String CTX_RECORD = "claimIdRecord";
     public static final String CTX_PREVIOUS_STATUS = "previousClaimStatus";
 
+
+    public static final String SAGA_UPDATE_RECORD = "UpdateClaimSaga";
+    public static final String STEP_RETRIEVE_FOR_UPDATE = "retrieveClaimForUpdate";
+    public static final String STEP_UPDATE_RECORD = "updateClaim";
+    public static final String COMPENSATE_RESTORE_RECORD = "restoreClaim";
+    public static final String EVENT_RECORD_UPDATED = "claims.updated";
+    public static final String CTX_PREVIOUS_RECORD = "previousClaimRecord";
+
     private ClaimSagaConstants() {
     }
 }

@@ -20,7 +20,11 @@ import io.fireflysoftware.core.insurance.claims.sdk.model.ClaimDTO;
 import io.fireflysoftware.domain.insurance.claims.core.commands.CreateClaimCommand;
 import io.fireflysoftware.domain.insurance.claims.core.commands.GetClaimQuery;
 import io.fireflysoftware.domain.insurance.claims.core.commands.UpdateClaimStatusCommand;
+import io.fireflysoftware.domain.insurance.claims.core.commands.UpdateClaimCommand;
+import io.fireflysoftware.domain.insurance.claims.core.commands.RemoveClaimCommand;
+import io.fireflysoftware.domain.insurance.claims.core.lifecycle.ClaimRecordLifecycle;
 import io.fireflysoftware.domain.insurance.claims.core.constants.ClaimSagaConstants;
+import org.fireflyframework.cqrs.command.CommandBus;
 import org.fireflyframework.cqrs.query.QueryBus;
 import org.fireflyframework.orchestration.saga.engine.SagaEngine;
 import org.fireflyframework.orchestration.saga.engine.SagaResult;
@@ -38,10 +42,12 @@ public class ClaimsServiceImpl implements ClaimsService {
 
     private final SagaEngine sagaEngine;
     private final QueryBus queryBus;
+    private final CommandBus commandBus;
 
-    public ClaimsServiceImpl(SagaEngine sagaEngine, QueryBus queryBus) {
+    public ClaimsServiceImpl(SagaEngine sagaEngine, QueryBus queryBus, CommandBus commandBus) {
         this.sagaEngine = sagaEngine;
         this.queryBus = queryBus;
+        this.commandBus = commandBus;
     }
 
     @Override
@@ -68,6 +74,56 @@ public class ClaimsServiceImpl implements ClaimsService {
     @Override
     public Mono<ClaimDTO> get(UUID claimId) {
         return queryBus.query(new GetClaimQuery(claimId));
+    }
+
+
+    @Override
+    public Mono<ClaimDTO> update(UpdateClaimCommand command) {
+        StepInputs inputs = StepInputs.builder()
+                .forStepId(ClaimSagaConstants.STEP_RETRIEVE_FOR_UPDATE, new GetClaimQuery(command.claimId()))
+                .forStepId(ClaimSagaConstants.STEP_UPDATE_RECORD, command)
+                .build();
+        return sagaEngine.execute(ClaimSagaConstants.SAGA_UPDATE_RECORD, inputs)
+                .flatMap(result -> outcome(result, ClaimSagaConstants.STEP_UPDATE_RECORD, ClaimDTO.class));
+    }
+
+    @Override
+    public Mono<ClaimDTO> close(UUID claimId, String statusReason) {
+        return transition(claimId, ClaimDTO.ClaimStatusEnum.CLOSED, statusReason);
+    }
+
+    @Override
+    public Mono<ClaimDTO> deny(UUID claimId, String statusReason) {
+        return transition(claimId, ClaimDTO.ClaimStatusEnum.DENIED, statusReason);
+    }
+
+    private Mono<ClaimDTO> transition(UUID claimId, ClaimDTO.ClaimStatusEnum target, String statusReason) {
+        return get(claimId)
+                .switchIfEmpty(Mono.error(new IllegalStateException("Claim was not found")))
+                .flatMap(current -> {
+                    if (!ClaimRecordLifecycle.canTransition(current.getClaimStatus(), target)) {
+                        String from = current.getClaimStatus() == null
+                                ? "unset"
+                                : current.getClaimStatus().getValue();
+                        return Mono.<ClaimDTO>error(new IllegalStateException(
+                                "Claim " + claimId + " cannot move from " + from + " to " + target.getValue()));
+                    }
+                    return updateStatus(new UpdateClaimStatusCommand(claimId, target.getValue(), statusReason));
+                });
+    }
+
+    @Override
+    public Mono<Void> remove(UUID claimId) {
+        return get(claimId)
+                .switchIfEmpty(Mono.error(new IllegalStateException("Claim was not found")))
+                .flatMap(current -> {
+                    if (!ClaimRecordLifecycle.canRemove(current.getClaimStatus())) {
+                        return Mono.error(new IllegalStateException(
+                                "Claim " + claimId + " is " + current.getClaimStatus().getValue()
+                                        + " and cannot be deleted; close it so the claim history is kept"));
+                    }
+                    return commandBus.send(new RemoveClaimCommand(claimId));
+                });
     }
 
     private static <T> Mono<T> outcome(SagaResult result, String stepId, Class<T> type) {

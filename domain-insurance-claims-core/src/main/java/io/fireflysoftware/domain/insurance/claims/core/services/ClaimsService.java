@@ -19,6 +19,7 @@ package io.fireflysoftware.domain.insurance.claims.core.services;
 import io.fireflysoftware.core.insurance.claims.sdk.model.ClaimDTO;
 import io.fireflysoftware.domain.insurance.claims.core.commands.CreateClaimCommand;
 import io.fireflysoftware.domain.insurance.claims.core.commands.UpdateClaimStatusCommand;
+import io.fireflysoftware.domain.insurance.claims.core.commands.UpdateClaimCommand;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -51,4 +52,38 @@ public interface ClaimsService {
      * @return the record, or empty when the core has none
      */
     Mono<ClaimDTO> get(UUID claimId);
+
+    /**
+     * Updates fields on a claim and leaves its status unchanged.
+     *
+     * @param command the update
+     * @return the record returned by the core
+     */
+    Mono<ClaimDTO> update(UpdateClaimCommand command);
+
+    /**
+     * Closes a claim when the claims core allows CLOSED.
+     *
+     * @param claimId the core identifier
+     * @param statusReason optional reason stored by the status saga when the core keeps one
+     * @return the updated record
+     */
+    Mono<ClaimDTO> close(UUID claimId, String statusReason);
+
+    /**
+     * Denies a claim when the claims core allows DENIED.
+     *
+     * @param claimId the core identifier
+     * @param statusReason optional reason stored by the status saga when the core keeps one
+     * @return the updated record
+     */
+    Mono<ClaimDTO> deny(UUID claimId, String statusReason);
+
+    /**
+     * Deletes a claim when the core lifecycle allows removal.
+     *
+     * @param claimId the core identifier
+     * @return completion when the core has deleted the record
+     */
+    Mono<Void> remove(UUID claimId);
 }

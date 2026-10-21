@@ -2,9 +2,9 @@ openapi: 3.0.1
 info:
   title: Domain Insurance Claims API
   description: "Orchestrates insurance claim records through core-insurance-claims.\
-    \ It records claim status through the claims core. It does not settle a claim,\
-    \ post a recovery, set a reserve, call a sanctions provider, or certify IFRS 17\
-    \ or Solvency II."
+    \ It creates, updates, changes status, and closes claims through the claims core.\
+    \ It does not settle a claim, post a recovery, set a reserve, call a sanctions\
+    \ provider, or certify IFRS 17 or Solvency II."
   contact:
     name: Firefly Software Foundation
     email: dev@fireflysoftware.io
@@ -55,36 +55,6 @@ paths:
                 $ref: "#/components/schemas/ClaimDTO"
         "404":
           description: Not found
-  /api/v1/claims:
-    post:
-      tags:
-      - Claims
-      summary: Create claim
-      description: Runs the register saga against core-insurance-claims.
-      operationId: create
-      parameters:
-      - name: X-Idempotency-Key
-        in: header
-        description: "Unique key for idempotent requests. If provided, ensures that\
-          \ identical requests with the same key will only be processed once."
-        required: false
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ClaimDTO"
-        required: true
-      responses:
-        "201":
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ClaimDTO"
-        "400":
-          description: Invalid request
   /api/v1/claims/{claimId}:
     get:
       tags:
@@ -116,6 +86,174 @@ paths:
                 $ref: "#/components/schemas/ClaimDTO"
         "404":
           description: Not found
+    put:
+      tags:
+      - Claims
+      summary: Update claim
+      description: Runs the update saga against core-insurance-claims. Status is left
+        unchanged.
+      operationId: update
+      parameters:
+      - name: claimId
+        in: path
+        description: Core identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimDTO"
+        required: true
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimDTO"
+        "404":
+          description: Not found
+    delete:
+      tags:
+      - Claims
+      summary: Remove claim
+      description: Deletes the record through core-insurance-claims when that core
+        allows removal.
+      operationId: remove
+      parameters:
+      - name: claimId
+        in: path
+        description: Core identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Removed
+        "404":
+          description: Not found
+  /api/v1/claims/{claimId}/deny:
+    post:
+      tags:
+      - Claims
+      summary: Deny claim
+      description: Denies a claim when the claims core allows DENIED.
+      operationId: deny
+      parameters:
+      - name: claimId
+        in: path
+        description: Core identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReasonRequest"
+        required: true
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimDTO"
+        "404":
+          description: Not found
+  /api/v1/claims/{claimId}/close:
+    post:
+      tags:
+      - Claims
+      summary: Close claim
+      description: Closes a claim when the claims core allows CLOSED.
+      operationId: close
+      parameters:
+      - name: claimId
+        in: path
+        description: Core identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReasonRequest"
+        required: true
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimDTO"
+        "404":
+          description: Not found
+  /api/v1/claims:
+    post:
+      tags:
+      - Claims
+      summary: Create claim
+      description: Runs the register saga against core-insurance-claims.
+      operationId: create
+      parameters:
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimDTO"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimDTO"
+        "400":
+          description: Invalid request
 components:
   schemas:
     StatusChangeRequest:
@@ -189,3 +327,8 @@ components:
           type: string
           format: date-time
           nullable: true
+    ReasonRequest:
+      type: object
+      properties:
+        statusReason:
+          type: string

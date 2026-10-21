@@ -18,8 +18,10 @@ package io.fireflysoftware.domain.insurance.claims.web.controllers;
 
 import io.fireflysoftware.core.insurance.claims.sdk.model.ClaimDTO;
 import io.fireflysoftware.domain.insurance.claims.core.commands.CreateClaimCommand;
+import io.fireflysoftware.domain.insurance.claims.core.commands.UpdateClaimCommand;
 import io.fireflysoftware.domain.insurance.claims.core.commands.UpdateClaimStatusCommand;
 import io.fireflysoftware.domain.insurance.claims.core.services.ClaimsService;
+import io.fireflysoftware.domain.insurance.claims.interfaces.dtos.ReasonRequest;
 import io.fireflysoftware.domain.insurance.claims.interfaces.dtos.StatusChangeRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,6 +33,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -98,5 +101,65 @@ public class ClaimsController {
         return service.updateStatus(new UpdateClaimStatusCommand(claimId, request.getStatus(), request.getStatusReason()))
                 .map(ResponseEntity::ok)
                 .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
+    }
+
+    @Operation(summary = "Update claim", description = "Runs the update saga against core-insurance-claims. Status is left unchanged.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Updated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ClaimDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Not found", content = @Content)
+    })
+    @PutMapping(value = "/{claimId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseEntity<ClaimDTO>> update(
+            @Parameter(description = "Core identifier", required = true) @PathVariable UUID claimId,
+            @RequestBody ClaimDTO body) {
+        return service.update(new UpdateClaimCommand(claimId, body))
+                .map(ResponseEntity::ok)
+                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
+    }
+
+    @Operation(summary = "Close claim", description = "Closes a claim when the claims core allows CLOSED.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Updated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ClaimDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Not found", content = @Content)
+    })
+    @PostMapping(value = "/{claimId}/close", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseEntity<ClaimDTO>> close(
+            @Parameter(description = "Core identifier", required = true) @PathVariable UUID claimId,
+            @RequestBody ReasonRequest request) {
+        return service.close(claimId, request.getStatusReason())
+                .map(ResponseEntity::ok)
+                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
+    }
+
+    @Operation(summary = "Deny claim", description = "Denies a claim when the claims core allows DENIED.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Updated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ClaimDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Not found", content = @Content)
+    })
+    @PostMapping(value = "/{claimId}/deny", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseEntity<ClaimDTO>> deny(
+            @Parameter(description = "Core identifier", required = true) @PathVariable UUID claimId,
+            @RequestBody ReasonRequest request) {
+        return service.deny(claimId, request.getStatusReason())
+                .map(ResponseEntity::ok)
+                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
+    }
+
+    @Operation(summary = "Remove claim", description = "Deletes the record through core-insurance-claims when that core allows removal.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Removed"),
+            @ApiResponse(responseCode = "404", description = "Not found", content = @Content)
+    })
+    @DeleteMapping("/{claimId}")
+    public Mono<ResponseEntity<Void>> remove(
+            @Parameter(description = "Core identifier", required = true) @PathVariable UUID claimId) {
+        return service.remove(claimId)
+                .thenReturn(ResponseEntity.noContent().build());
     }
 }

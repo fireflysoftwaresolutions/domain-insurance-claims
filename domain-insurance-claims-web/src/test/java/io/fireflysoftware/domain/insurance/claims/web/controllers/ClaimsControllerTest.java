@@ -18,6 +18,7 @@ package io.fireflysoftware.domain.insurance.claims.web.controllers;
 
 import io.fireflysoftware.core.insurance.claims.sdk.model.ClaimDTO;
 import io.fireflysoftware.domain.insurance.claims.core.services.ClaimsService;
+import io.fireflysoftware.domain.insurance.claims.interfaces.dtos.ReasonRequest;
 import io.fireflysoftware.domain.insurance.claims.interfaces.dtos.StatusChangeRequest;
 import org.fireflyframework.web.error.config.ErrorHandlingProperties;
 import org.fireflyframework.web.error.converter.ExceptionConverterService;
@@ -107,5 +108,46 @@ class ClaimsControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(ClaimDTO.class);
+    }
+
+    @Test
+    void update_returns200() {
+        UUID id = UUID.randomUUID();
+        when(service.update(any())).thenReturn(Mono.just(new ClaimDTO(id)));
+
+        webTestClient.put()
+                .uri("/api/v1/claims/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new ClaimDTO())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(ClaimDTO.class);
+    }
+
+    @Test
+    void close_returns200() {
+        UUID id = UUID.randomUUID();
+        when(service.close(any(), any())).thenReturn(Mono.just(new ClaimDTO(id)));
+        ReasonRequest request = new ReasonRequest();
+        request.setStatusReason("Caller request");
+
+        webTestClient.post()
+                .uri("/api/v1/claims/{id}/close", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(ClaimDTO.class);
+    }
+
+    @Test
+    void remove_returns204() {
+        UUID id = UUID.randomUUID();
+        when(service.remove(id)).thenReturn(Mono.empty());
+
+        webTestClient.delete()
+                .uri("/api/v1/claims/{id}", id)
+                .exchange()
+                .expectStatus().isNoContent();
     }
 }

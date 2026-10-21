@@ -33,7 +33,7 @@ import org.springframework.context.annotation.ComponentScan;
 info = @Info(
         title = "Domain Insurance Claims API",
         version = "1.0.0",
-        description = "Orchestrates insurance claim records through core-insurance-claims. It records claim status through the claims core. It does not settle a claim, post a recovery, set a reserve, call a sanctions provider, or certify IFRS 17 or Solvency II.",
+        description = "Orchestrates insurance claim records through core-insurance-claims. It creates, updates, changes status, and closes claims through the claims core. It does not settle a claim, post a recovery, set a reserve, call a sanctions provider, or certify IFRS 17 or Solvency II.",
         contact = @Contact(
                 name = "Firefly Software Foundation",
                 email = "dev@fireflysoftware.io"
