@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.fireflysoftware</groupId>
+        <artifactId>firefly-parent</artifactId>
+        <version>26.10.3</version>
+        <relativePath/>
+    </parent>
+
+    <artifactId>domain-insurance-claims</artifactId>
+    <name>domain-insurance-claims</name>
+    <version>26.10.3</version>
+    <packaging>pom</packaging>
+    <description>Orchestrates insurance claim records and status changes through the claims core. Developed by the Firefly Software Foundation.</description>
+    <url>https://openplatform.fireflysoftware.io/domain-insurance-claims</url>
+
+    <modules>
+        <module>domain-insurance-claims-core</module>
+        <module>domain-insurance-claims-interfaces</module>
+        <module>domain-insurance-claims-web</module>
+        <module>domain-insurance-claims-sdk</module>
+        <module>domain-insurance-claims-infra</module>
+    </modules>
+
+    <properties>
+        <java.version>25</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.fireflysoftware</groupId>
+                <artifactId>core-insurance-claims-sdk</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fireflysoftware</groupId>
+                <artifactId>domain-insurance-claims-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fireflysoftware</groupId>
+                <artifactId>domain-insurance-claims-interfaces</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fireflysoftware</groupId>
+                <artifactId>domain-insurance-claims-web</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fireflysoftware</groupId>
+                <artifactId>domain-insurance-claims-sdk</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fireflysoftware</groupId>
+                <artifactId>domain-insurance-claims-infra</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

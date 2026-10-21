@@ -1,0 +1,191 @@
+openapi: 3.0.1
+info:
+  title: Domain Insurance Claims API
+  description: "Orchestrates insurance claim records through core-insurance-claims.\
+    \ It records claim status through the claims core. It does not settle a claim,\
+    \ post a recovery, set a reserve, call a sanctions provider, or certify IFRS 17\
+    \ or Solvency II."
+  contact:
+    name: Firefly Software Foundation
+    email: dev@fireflysoftware.io
+  version: 1.0.0
+servers:
+- url: https://openplatform.fireflysoftware.io/domain-insurance-claims
+  description: Development Environment
+- url: /
+  description: Local Development Environment
+tags:
+- name: Claims
+  description: Domain orchestration for insurance claim records
+paths:
+  /api/v1/claims/{claimId}/status:
+    put:
+      tags:
+      - Claims
+      summary: Update status
+      description: Runs the status saga against core-insurance-claims.
+      operationId: updateStatus
+      parameters:
+      - name: claimId
+        in: path
+        description: Core identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusChangeRequest"
+        required: true
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimDTO"
+        "404":
+          description: Not found
+  /api/v1/claims:
+    post:
+      tags:
+      - Claims
+      summary: Create claim
+      description: Runs the register saga against core-insurance-claims.
+      operationId: create
+      parameters:
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimDTO"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimDTO"
+        "400":
+          description: Invalid request
+  /api/v1/claims/{claimId}:
+    get:
+      tags:
+      - Claims
+      summary: Get claim
+      description: Reads one record from core-insurance-claims.
+      operationId: get
+      parameters:
+      - name: claimId
+        in: path
+        description: Core identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimDTO"
+        "404":
+          description: Not found
+components:
+  schemas:
+    StatusChangeRequest:
+      type: object
+      properties:
+        status:
+          type: string
+        statusReason:
+          type: string
+    ClaimDTO:
+      required:
+      - claimNumber
+      - claimStatus
+      - lossDate
+      - notifiedAt
+      - policyId
+      - tenantId
+      type: object
+      properties:
+        claimId:
+          type: string
+          format: uuid
+          nullable: true
+        tenantId:
+          type: string
+          format: uuid
+        claimNumber:
+          type: string
+        policyId:
+          type: string
+          format: uuid
+        contractId:
+          type: string
+          format: uuid
+          nullable: true
+        policyTransactionId:
+          type: string
+          format: uuid
+          nullable: true
+        claimStatus:
+          type: string
+          enum:
+          - NOTIFIED
+          - OPEN
+          - UNDER_ASSESSMENT
+          - RESERVED
+          - SETTLED
+          - CLOSED
+          - REOPENED
+          - DENIED
+        lossDate:
+          type: string
+          format: date
+        notifiedAt:
+          type: string
+          format: date-time
+        causeCode:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
