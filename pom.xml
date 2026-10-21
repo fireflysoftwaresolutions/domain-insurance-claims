@@ -7,13 +7,13 @@
     <parent>
         <groupId>io.fireflysoftware</groupId>
         <artifactId>firefly-parent</artifactId>
-        <version>26.10.3</version>
+        <version>26.10.4</version>
         <relativePath/>
     </parent>
 
     <artifactId>domain-insurance-claims</artifactId>
     <name>domain-insurance-claims</name>
-    <version>26.10.3</version>
+    <version>26.10.4</version>
     <packaging>pom</packaging>
     <description>Orchestrates insurance claim create, update, status, and close commands through the claims core. Developed by the Firefly Software Foundation.</description>
     <url>https://openplatform.fireflysoftware.io/domain-insurance-claims</url>
